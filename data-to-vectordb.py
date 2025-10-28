@@ -5,7 +5,7 @@ from qdrant_client import QdrantClient,models
 import re
 
 # Global Configs
-file_name = "laptop-info.md"
+file_name = "remaining_markdown.md"
 collection_name = "Laptop Products"
 dense_encoder = TextEmbedding("sentence-transformers/all-MiniLM-L6-v2")
 sparse_encoder = SparseTextEmbedding("Qdrant/bm25")
@@ -76,6 +76,7 @@ def to_vectordb():
     markdown_splitter = MarkdownHeaderTextSplitter(headers_to_split_on=headers_to_split_on)
     all_docs = markdown_splitter.split_text(markdown_text) 
     all_chunks = chunking_of_products(all_docs)
+    
     url_pattern =  r"URL:\s*(https://[^\s]+)"
     create_collection_payloads()
     offset = 0
@@ -132,3 +133,8 @@ def to_vectordb():
             offset+=1
         product_offset+=1
 
+def main():
+    to_vectordb()
+
+if __name__ == "__main__":
+    main()
