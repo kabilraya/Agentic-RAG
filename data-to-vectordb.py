@@ -5,7 +5,7 @@ from qdrant_client import QdrantClient,models
 import re
 
 # Global Configs
-file_name = "remaining_markdown.md"
+file_name = "mudita_laptop.md"
 collection_name = "Laptop Products"
 dense_encoder = TextEmbedding("sentence-transformers/all-MiniLM-L6-v2")
 sparse_encoder = SparseTextEmbedding("Qdrant/bm25")
