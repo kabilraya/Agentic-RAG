@@ -64,8 +64,8 @@ def retrieve_relevant_documents(query):
     chunks_of_a_product = []
     for point in info:
         chunk = point.payload.get("chunk")
-        
-        chunks_of_a_product.append(chunk)
+        cleaned_chunks = re.sub(r'[ \t]+', ' ', chunk.strip())
+        chunks_of_a_product.append(cleaned_chunks)
     
     all_chunks.append(chunks_of_a_product)
     return all_chunks
