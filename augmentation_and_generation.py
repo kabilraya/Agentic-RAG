@@ -90,7 +90,7 @@ def chat(prompt:str):
     3. Finally, use the retrieved documents to answer all the queries such as price comparision, specification comparision, X VS Y Laptop Brands where X is the laptop searched by the user, Use cases(Gaming, Light Weight use-case)
     4. Include all the possible answers analysing the retrieved docs and the all the queries generated. 
     5. Give a detailed answer that covers all the concerns of the user without him/her having to explain much in their query.
-    
+
     User Query: "{prompt}"
     """
     
