@@ -47,7 +47,7 @@ def get_product_ids(query):
 
 def retrieve_relevant_documents(query):
     retrieved_products = get_product_ids(query=query)
-
+    print(retrieved_products)
     all_chunks = []
     for product in retrieved_products:
         info,_ = client.scroll(
@@ -60,14 +60,15 @@ def retrieve_relevant_documents(query):
         limit=30,
         with_payload = True,
         with_vectors = False
-    )
-    chunks_of_a_product = []
-    for point in info:
-        chunk = point.payload.get("chunk")
-        cleaned_chunks = re.sub(r'[ \t]+', ' ', chunk.strip())
-        chunks_of_a_product.append(cleaned_chunks)
+        )
+        chunks_of_a_product = []
+        for point in info:
+            chunk = point.payload.get("chunk")
+            cleaned_chunks = re.sub(r'[ \t]+', ' ', chunk.strip())
+            chunks_of_a_product.append(cleaned_chunks)
     
-    all_chunks.append(chunks_of_a_product)
+        all_chunks.append(chunks_of_a_product)
+    print(len(all_chunks))
     return all_chunks
 
     
