@@ -72,7 +72,7 @@ def deep_thinking_retrieval(query_list):
             document = retrieve_relevant_documents(query=query)
             
             documents_by_query[query] = document
-        print(json.dumps(documents_by_query, indent=2, ensure_ascii=False))
+        # print(json.dumps(documents_by_query, indent=2, ensure_ascii=False))
         return json.dumps(documents_by_query)
 
 def chat(prompt:str):
@@ -90,6 +90,8 @@ def chat(prompt:str):
     3. Finally, use the retrieved documents to answer all the queries such as price comparision, specification comparision, X VS Y Laptop Brands where X is the laptop searched by the user, Use cases(Gaming, Light Weight use-case)
     4. Include all the possible answers analysing the retrieved docs and the all the queries generated. 
     5. Give a detailed answer that covers all the concerns of the user without him/her having to explain much in their query.
+    6. Also, include the url for the laptop you mention in the response from the retrieved documents.
+    7. Display the specification in a table for better readability. Also for difference between X and Y brand laptop. display it in a table.
 
     User Query: "{prompt}"
     """
@@ -140,9 +142,8 @@ def chat(prompt:str):
     }})
     final_answer = response.candidates[0].content.parts[0].text
     print(final_answer)
+    return final_answer
 
-if __name__ == '__main__':
-    user_prompt = "Acer Laptop"
-    chat(user_prompt)
+
     
 
