@@ -2,7 +2,7 @@ from qdrant_client import QdrantClient, models
 import re
 from fastembed import TextEmbedding,SparseTextEmbedding,LateInteractionTextEmbedding
 #GLOBAL CONFIG
-collection_name = "Laptop Products"
+collection_name = "Smartphones Products"
 dense_encoder = TextEmbedding("sentence-transformers/all-MiniLM-L6-v2")
 sparse_encoder = SparseTextEmbedding("Qdrant/bm25")
 late_encoder = LateInteractionTextEmbedding("colbert-ir/colbertv2.0")
@@ -69,6 +69,8 @@ def retrieve_relevant_documents(query):
     
         all_chunks.append(chunks_of_a_product)
     print(len(all_chunks))
-    return all_chunks
+    print(all_chunks)
+    # return all_chunks
 
     
+retrieve_relevant_documents("Amoled")

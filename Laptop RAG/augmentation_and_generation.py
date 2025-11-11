@@ -103,12 +103,12 @@ def chat(prompt:str):
     try:
         function_call = response.candidates[0].content.parts[0].function_call
         if function_call is None:
-            raise ValueError("Model did not call a function")
+            return response.text
         print(f"[AI] Decided to call Tool 1:{function_call.name}")
-    except(IndexError,AttributeError):
+    except(IndexError,AttributeError,ValueError):
         print("\n [AI] : The model didn't call a function and responded with text instead:")
         print(response.text)
-        return
+        return response.text
 
 
     args = function_call.args   
@@ -124,10 +124,10 @@ def chat(prompt:str):
 
     try:
         function_call = response.candidates[0].content.parts[0].function_call
-        if function_call is None:
-            raise ValueError("Model did not call a function")
+        if function_call is None or function_call.name != "deep_thinking_retrieval":
+            return response.text
         print(f"[AI] Decided to call Tool 2:{function_call.name}")
-    except(IndexError,AttributeError):
+    except(IndexError,AttributeError,ValueError):
         print("\n [AI] : The model didn't call a function and responded with text instead:")
         print(response.text)
         return

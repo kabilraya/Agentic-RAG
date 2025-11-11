@@ -5,8 +5,8 @@ from qdrant_client import QdrantClient,models
 import re
 
 # Global Configs
-file_name = "mudita_laptop.md"
-collection_name = "Laptop Products"
+file_name = "gadget-byte-laptop.md"
+collection_name = "Smartphones Products"
 dense_encoder = TextEmbedding("sentence-transformers/all-MiniLM-L6-v2")
 sparse_encoder = SparseTextEmbedding("Qdrant/bm25")
 late_encoder = LateInteractionTextEmbedding("colbert-ir/colbertv2.0")
