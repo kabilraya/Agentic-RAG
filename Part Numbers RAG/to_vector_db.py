@@ -2,10 +2,11 @@ import pandas as pd
 from qdrant_client import QdrantClient, models
 from fastembed import SparseTextEmbedding,TextEmbedding,LateInteractionTextEmbedding
 import os
+
 #GLOBAL CONFIG
 
 collection_name = "Misumi Products"
-file_name = "camfollower_cam_followers_crown_hex_socket.xlsx"
+file_name = "camfollower_cam_followers_flat_hex_socket.xlsx"
 dense_encoder = TextEmbedding("sentence-transformers/all-MiniLM-L6-v2")
 sparse_encoder = SparseTextEmbedding("Qdrant/bm25")
 late_encoder = LateInteractionTextEmbedding("colbert-ir/colbertv2.0")
@@ -113,9 +114,12 @@ def to_vectordb():
         part_number_offset = 0
         subcategory_offset = 0
     for idx,row in table.iterrows():
-        part_info = f"Category:{category}| Subcategory:{subcategory}" + row['row-text']
+        
         href = row['Part Number URL']
+        
         url = main_domain + href
+
+        part_info = row['row-text'] +f" | Category:{category} | Subcategory:{subcategory} | URL: {url}"
         client.upsert(
             collection_name = collection_name,
             points=[
@@ -132,9 +136,9 @@ def to_vectordb():
                         "part_name": row["Part Number Name"]
                     },
                     vector={
-                        "dense" : list(dense_encoder.embed(row['row-text']))[0],
-                        "sparse" : list(sparse_encoder.embed(row["row-text"]))[0].as_object(),
-                        "lateinteract" : list(late_encoder.embed(row["row-text"]))[0]
+                        "dense" : list(dense_encoder.embed(part_info))[0],
+                        "sparse" : list(sparse_encoder.embed(part_info))[0].as_object(),
+                        "lateinteract" : list(late_encoder.embed(part_info))[0]
                     }
                 )
             ]
