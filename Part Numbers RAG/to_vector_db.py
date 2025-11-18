@@ -2,11 +2,11 @@ import pandas as pd
 from qdrant_client import QdrantClient, models
 from fastembed import SparseTextEmbedding,TextEmbedding,LateInteractionTextEmbedding
 import os
-
+import time
 #GLOBAL CONFIG
 
 collection_name = "Misumi Products"
-file_name = "camfollower_cam_followers_flat_hex_socket.xlsx"
+file_name = "camfollowers_cam_followers_straight_slot_flat.xlsx"
 dense_encoder = TextEmbedding("sentence-transformers/all-MiniLM-L6-v2")
 sparse_encoder = SparseTextEmbedding("Qdrant/bm25")
 late_encoder = LateInteractionTextEmbedding("colbert-ir/colbertv2.0")
@@ -76,6 +76,7 @@ def to_dataframes():
     return part_numbers_tables
 
 def to_vectordb():
+    total_start = time.perf_counter()
     name,ext = os.path.splitext(file_name)
     file_parts = name.split('_')
     category = file_parts[0]
@@ -113,8 +114,10 @@ def to_vectordb():
     else:
         part_number_offset = 0
         subcategory_offset = 0
+    row_count = len(table)
+    row_time_total = 0
     for idx,row in table.iterrows():
-        
+        row_start = time.perf_counter()
         href = row['Part Number URL']
         
         url = main_domain + href
@@ -143,8 +146,16 @@ def to_vectordb():
                 )
             ]
         )
+        row_end = time.perf_counter()
+        row_time_total += (row_end - row_start)
         part_number_offset+=1
+        
+    total_end = time.perf_counter()
+    total_time = total_end - total_start
+    avg_time = row_time_total/row_count if row_count > 0 else 0 
 
+    with open("timelog.txt","a",encoding="utf-8") as f:
+        f.write(f"{file_name} \nTotal Time:{total_time} \nAverage Time: {avg_time} \nTotal Rows inserted: {row_count}\n")
 def main():
     to_vectordb()
 

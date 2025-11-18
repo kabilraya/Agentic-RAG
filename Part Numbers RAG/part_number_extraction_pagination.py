@@ -9,10 +9,15 @@ import pandas as pd
 import os
 from dotenv import load_dotenv
 import uuid
+import time
 
 async def crawl_with_pagination():
     all_data = []
-    base_url = "https://vn.misumi-ec.com/vona2/detail/110310559799/?list=PageCategory"
+    total_crawl_time = 0
+    total_extract_time = 0
+    
+    page_count = 0
+    base_url = "https://vn.misumi-ec.com/vona2/detail/110300111510/?list=PageCategory"
     browser_config = BrowserConfig(headless = False, verbose = True, viewport_width=1400,viewport_height=940)
     run_config = CrawlerRunConfig(
         word_count_threshold=10,
@@ -25,7 +30,7 @@ async def crawl_with_pagination():
         remove_forms=True,
         remove_overlay_elements=True,
         check_robots_txt=True,
-        css_selector = "div.PartNumberList_mainOuter__d74Qg,div.PartNumberList_head__DR_PF"
+        css_selector = "div.PartNumberList_mainOuter__d74Qg,div.PartNumberList_head__DR_PF,dl.SpecTable_specTable__XNeik"
         )
     load_dotenv()
     api_key = os.getenv("GOOGLE_API_KEY")
@@ -72,11 +77,19 @@ async def crawl_with_pagination():
         session_id=session_id
     )
     async with AsyncWebCrawler(config=browser_config) as crawler:
+        crawl_start = time.perf_counter()
         initial_result = await crawler.arun(url = base_url, config=schema_conf)
+        crawl_end = time.perf_counter()
+        crawl_duration = crawl_end - crawl_start
+        total_crawl_time += crawl_duration
+
+        extract_start = time.perf_counter()
         soup = BeautifulSoup(initial_result.html,"html.parser")
         table_container = soup.select_one("div.PartNumberList_mainOuter__d74Qg")
         title_element = soup.select_one("h1.PageHeading_wrap__K1c1n")
         sub_category = title_element.get_text(strip=True) if title_element else "unknown_product" 
+        for_category = soup.select_one("dd.SpecTable_specValue__hPVpN")
+        category = for_category.get_text(strip=False) if for_category else "unknown_category"
         cleaned_html = str(table_container)
         css_schema = JsonCssExtractionStrategy.generate_schema(
         html=cleaned_html,
@@ -84,6 +97,9 @@ async def crawl_with_pagination():
         query=query,
         llm_config = LLMConfig(provider="gemini/gemini-2.5-flash",api_token=api_key)
         )
+        extract_end = time.perf_counter()
+        extract_duration = extract_end - extract_start
+        total_extract_time += extract_duration
         print(css_schema)
 
         #extraction starts from here
@@ -91,6 +107,7 @@ async def crawl_with_pagination():
         current_page = 1
         has_next_page = True
         while has_next_page:
+            page_count+=1
             if current_page == 1:
                 run_config.js_only = True
                 run_config.session_id = session_id
@@ -146,21 +163,32 @@ async def crawl_with_pagination():
                 run_config.extraction_strategy = JsonCssExtractionStrategy(schema=css_schema)
                 run_config.js_only = True
                 run_config.session_id = session_id
-
+            crawl_start = time.perf_counter()
             result = await crawler.arun(url = base_url, config = run_config)
+            crawl_end = time.perf_counter()
+            crawl_duration = crawl_end - crawl_start
+            total_crawl_time += crawl_duration
+
+            extract_start = time.perf_counter()
             soup = BeautifulSoup(result.html,"html.parser")
             next_button = soup.select_one("a.Pagination_link__5eELX.Pagination_next__5fRp8")
             data = json.loads(result.extracted_content)
+            extract_end = time.perf_counter()
+            extract_duration = extract_end - extract_start
+            total_extract_time += extract_duration
             all_data.extend(data)
             current_page += 1
             if next_button == None:
                 has_next_page = False
             else:
                 continue
-
+        print(f"Average Crawl Time: {total_crawl_time/page_count}")
+        print(f"Average Extraction Time: {total_extract_time/page_count}")
+        total_time = total_crawl_time + total_extract_time
+        print(f"Average Scrape Time: {total_time/page_count}")
         print(len(all_data))
         df = pd.DataFrame(all_data)
-        sub_category = re.sub(r'[ ,]+', '_', sub_category)
+        sub_category = re.sub(r'[/ - ,]+', '_', sub_category)
         file_name = f"camfollower_{sub_category}.xlsx".lower()
         df.to_excel(file_name, index=False)
     

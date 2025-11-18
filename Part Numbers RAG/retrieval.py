@@ -20,12 +20,12 @@ def retrieval(query):
         models.Prefetch(
             query=dense_query,
             using="dense",
-            limit=40,
+            limit=60,
         ),
         models.Prefetch(
             query=models.SparseVector(**sparse_query.as_object()),
             using = "sparse",
-            limit = 40,
+            limit = 60,
         )
     ]
 
