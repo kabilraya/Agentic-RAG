@@ -1,7 +1,7 @@
 from qdrant_client import QdrantClient,models
 import re
 from fastembed import TextEmbedding, SparseTextEmbedding, LateInteractionTextEmbedding
-
+import time
 #GLOBAL CONFIG
 collection_name = "Misumi Products"
 client = QdrantClient(url="http://localhost:6333")
@@ -11,7 +11,7 @@ late_encoder = LateInteractionTextEmbedding("colbert-ir/colbertv2.0")
 
 def retrieval(query):
     #embedding the query
-
+    retrieve_start = time.perf_counter()
     dense_query = next(dense_encoder.query_embed(query))
     sparse_query = next(sparse_encoder.query_embed(query=query))
     late_query = next(late_encoder.query_embed(query=query))
@@ -20,12 +20,12 @@ def retrieval(query):
         models.Prefetch(
             query=dense_query,
             using="dense",
-            limit=60,
+            limit=80,
         ),
         models.Prefetch(
             query=models.SparseVector(**sparse_query.as_object()),
             using = "sparse",
-            limit = 60,
+            limit = 80,
         )
     ]
 
@@ -34,12 +34,15 @@ def retrieval(query):
         query=late_query,
         using= "lateinteract",
         prefetch=prefetch,
-        limit = 30,
+        limit = 40,
         with_payload = True,
         with_vectors=False,
 
     ).points
-    
+    retrieve_end = time.perf_counter()
+    retrieval_time_total = retrieve_end - retrieve_start
+    with open("retrieval_time.txt","a",encoding = "utf-8") as f:
+        f.write(f"Query: {query}\n Time for retrieval: {retrieval_time_total}\n\n")
     return points
 
 def retrieve_part_numbers(query):

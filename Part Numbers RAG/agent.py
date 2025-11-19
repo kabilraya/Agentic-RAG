@@ -3,6 +3,7 @@ import google.generativeai as genai
 from dotenv import load_dotenv
 import os
 import json
+import time
 
 load_dotenv()
 api_key = os.getenv("GOOGLE_API_KEY")
@@ -23,7 +24,7 @@ def retrieval_of_partnumbers(base_query):
 
     retrieved_products = retrieve_part_numbers(base_query)
     for product in retrieved_products:
-        print(product)
+        print(product + "\n\n")
     print(len(retrieved_products))
     return retrieved_products
 
@@ -78,58 +79,16 @@ def chat(prompt:str):
     - If a product has "-" or NULL for a value, KEEP the column and place "-" in the cell.
     - Do NOT reorder attributes.
     
-
     You must follow this algorithm EXACTLY.
-    Do not merge the attributes of one group to another and make a huge table. Just Split the table with the subcategory name on top.
+    DO NOT merge the attributes of one group to another and make a huge table. Just Split the table having different schema.
+    DO NOT mention which subcategory that table falls under. Just display SEPARATE TABLES IF THE SCHEMA IS DIFFERENT. Mention the sub category the table falls under.
     
-    7. You MUST classify the user's query into ONE of the 3 categories below: (EXTREAMLY STRICT)
-    - A query cannot belong to more than one category.
-    - DO NOT MENTION WHICH CATEGORY THE QUERY FALLS UNDER.
-    - Also do not mention what you are about to do or should be doing. JUST DISPLAY THE TABLE WITH CORRECT SUB-CATEGORY
 
-    CATEGORY 1 - EXACT PART NUMBER QUERY
-    Condition: The user query EXACTLY matches a document's “Part Number Name” (case-insensitive, full match).
-    
-    Go through the "Part Number Name" of all the documents. If the query matches any one of them exactly then.
-
-    - DISPLAY ONLY THAT ONE DOCUMENT.
-    - IGNORE all other retrieved documents.
-    - Display it in a single table using its schema.
-    - DO NOT display other documents even if schemas match.
-    - IF there are more than one documents then apply the SCHEMA-SPLITTING algorithm.
-
-    CATEGORY 2 - CATEGORY OR SUBCATEGORY
-
-    Condition: The user query matches one of "Category" OR "Subcategory" attribute from one of the retrieved documents.
-    
-    If the query matches the "Category"
-    - RETURN ALL retrieved documents
-    - Apply the SCHEMA-SPLITTING algorithm.
-
-    If the query matches the "Subcategory"
-    -Return the documents that falls under that sub-category ONLY.
-    -DO NOT USE THE SCHEMA-SPLITTING algorithm as the schema might be same for a sub-category.
-
-    CATEGORY 3: DIMENSION QUERY
-
-    Condition:
-    - The user query mentions measurements such as:
-    “width”, “outer”, “inner”, “diameter”, “mm”, numeric filters, etc.
-
-    
-    - Select ONLY products matching the dimension criteria.
-    - If multiple schemas exist:
-    - Split into multiple tables using SCHEMA-SPLITTING rules.
-    - If the dimension ALSO contains an exact part number:
-    Treat as CATEGORY 1 (return only the exact product).
-
-    DO NOT MENTION WHICH CATEGORY THE QUERY FALLS UNDER.
-
-    8. Provide the URL for each products.
-    9. DO NOT ask any further question. Just generate responses according to the retrieved documnents matching the user's query against the rules above.
+    7. Provide the URL for each products.
+    8. DO NOT ask any further question. Just generate responses according to the retrieved documnents matching the user's query against the rules above.
     User Query: "{prompt}"
     """
-
+    llm_time_start = time.perf_counter()
     response = chat_session.send_message(initial_prompt)
 
     try:
@@ -151,6 +110,10 @@ def chat(prompt:str):
     }})
 
     final_answer = response.candidates[0].content.parts[0].text
+    llm_time_end = time.perf_counter()
+    llm_time = llm_time_end - llm_time_start
+    with open("LLM_Generation_Time.txt","a",encoding="utf-8") as f:
+        f.write(f"Query: {prompt} \n Time of Response Generation: {llm_time}\n\n")
     return final_answer
 
 def main():
