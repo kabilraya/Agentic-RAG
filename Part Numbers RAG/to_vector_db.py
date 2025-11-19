@@ -67,11 +67,21 @@ def create_collection_with_payloads():
 def to_dataframes():
     # loading the excel table into pandas dataframes cleaning the NaN values
     part_numbers_tables = pd.read_excel(file_name)
-    part_numbers_tables = part_numbers_tables.fillna("")
+    part_numbers_tables = part_numbers_tables.replace("-","none")
     columns_to_join = part_numbers_tables.drop(columns=["Part Number URL"])
     part_numbers_tables["row-text"] = part_numbers_tables.apply(lambda r: " | ".join(f"{c}:{r[c]}" for c in columns_to_join.columns),axis = 1)
-    
-    
+    exclude_cols = {
+        "Price", "Volumn Discount", "Minimum order Qty",
+        "Days to Ship", "Seal", "Part Number URL","Volume Discount","Part Number URL"
+    }
+    part_numbers_tables["embedding-text"] = part_numbers_tables.apply(
+    lambda r: " | ".join(
+        f"{c}:{r[c]}"
+        for c in part_numbers_tables.columns
+        if c not in exclude_cols
+    ),
+    axis=1
+    )
 
     return part_numbers_tables
 
@@ -123,6 +133,7 @@ def to_vectordb():
         url = main_domain + href
 
         part_info = row['row-text'] +f" | Category:{category} | Subcategory:{subcategory} | URL: {url}"
+        info_for_embedding = f"Category:{category} | Subcategory:{subcategory} | " + row["embedding-text"]
         client.upsert(
             collection_name = collection_name,
             points=[
@@ -139,9 +150,9 @@ def to_vectordb():
                         "part_name": row["Part Number Name"]
                     },
                     vector={
-                        "dense" : list(dense_encoder.embed(part_info))[0],
-                        "sparse" : list(sparse_encoder.embed(part_info))[0].as_object(),
-                        "lateinteract" : list(late_encoder.embed(part_info))[0]
+                        "dense" : list(dense_encoder.embed(info_for_embedding))[0],
+                        "sparse" : list(sparse_encoder.embed(info_for_embedding))[0].as_object(),
+                        "lateinteract" : list(late_encoder.embed(info_for_embedding))[0]
                     }
                 )
             ]
@@ -154,8 +165,8 @@ def to_vectordb():
     total_time = total_end - total_start
     avg_time = row_time_total/row_count if row_count > 0 else 0 
 
-    with open("timelog.txt","a",encoding="utf-8") as f:
-        f.write(f"{file_name} \nTotal Time:{total_time} \nAverage Time: {avg_time} \nTotal Rows inserted: {row_count}\n")
+    with open("insertion_time.txt","a",encoding="utf-8") as f:
+        f.write(f"{file_name} \nTotal Time:{total_time} \nAverage Time: {avg_time} \nTotal Rows inserted: {row_count}\n\n")
 def main():
     to_vectordb()
 
